@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Study Tracker</title>
+
+<!-- ফন্ট -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Noto+Sans+Display:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  
+  :root{
+    --bg-1: #07070b;       /* মূল পটভূমি */
+    --bg-2: #0d1117;       /* কার্ড পটভূমি */
+    --card-glass: rgba(255,255,255,0.03);
+    --muted: #9aa4b2;
+    --text: #e6eef8;
+    --accent: #0ea5ff;     /* neon blue */
+    --accent-2: #2dd4ff;   /* light cyan for gradient */
+    --danger: #ff6b6b;
+    --shadow: 0 8px 30px rgba(2,6,23,0.7);
+    --glass-border: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: "Inter", "Noto Sans Display", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(1000px 500px at 10% 10%, rgba(14,165,255,0.06), transparent 8%),
+                radial-gradient(800px 400px at 90% 90%, rgba(45,212,255,0.03), transparent 12%),
+                linear-gradient(180deg, var(--bg-1), var(--bg-2) 60%);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    padding:28px;
+  }
+
+  /* ===========================
+     APP WRAPPER
+     =========================== */
+  .app{
+    max-width:1150px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:14px;
+    padding:18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--glass-border);
+    overflow:hidden;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    margin-bottom:16px;
+  }
+
+  .title-left{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  h1{ margin:0; font-size:20px; letter-spacing:0.2px; font-weight:700; color:var(--text); }
+  p.subtitle{ margin:0; color:var(--muted); font-size:13px; }
+
+  /* controls */
+  .controls{ display:flex; gap:10px; align-items:center; }
+  .btn {
+    border:0;
+    padding:10px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:700;
+    letter-spacing:0.2px;
+    transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    color: #021024;
+    box-shadow: 0 8px 24px rgba(14,165,255,0.12);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: none;
+    font-weight:600;
+  }
+  .btn.warn {
+    background: linear-gradient(90deg, #ff7a7a, #ff5c8a);
+    color: white;
+  }
+  .btn:active{ transform: translateY(1px) }
+
+  /* layout grid */
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:18px;
+  }
+  @media (max-width:960px){
+    .grid{ grid-template-columns: 1fr; }
+    .side { position:static; top:auto; }
+  }
+
+  /* main column */
+  .main{
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.02);
+  }
+
+  /* subject card */
+  .subject {
+    display:block;
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:12px;
+    padding:14px;
+    margin-bottom:14px;
+    border:1px solid rgba(255,255,255,0.02);
+    transition: transform .14s cubic-bezier(.2,.9,.3,1), box-shadow .14s ease;
+  }
+  .subject:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(2,6,23,0.6); }
+
+  .subject-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .subject-left{ display:flex; gap:12px; align-items:center; }
+  .subject-badge{
+    min-width:44px; height:44px; border-radius:10px;
+    display:grid; place-items:center; font-weight:800; font-size:15px;
+    color:#021024;
+    background: linear-gradient(135deg, rgba(14,165,255,0.10), rgba(45,212,255,0.06));
+    border: 1px solid rgba(14,165,255,0.06);
+    box-shadow: 0 8px 20px rgba(14,165,255,0.06);
+  }
+  .subject-title h3{ margin:0; font-size:16px; }
+  .subject-title p { margin:0; color:var(--muted); font-size:13px; }
+
+  .subject-right{ display:flex; align-items:center; gap:12px; }
+  .subject-percent{ font-weight:800; color:var(--accent); font-size:15px; text-align:right; min-width:74px; }
+  .subject-actions{ display:flex; gap:8px; align-items:center; }
+
+  /* progress small */
+  .progress {
+    margin-top:10px;
+    height:10px; border-radius:999px; background: rgba(255,255,255,0.03);
+    overflow:hidden; border:1px solid rgba(255,255,255,0.02);
+  }
+  .progress > i { display:block; height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .7s cubic-bezier(.2,.9,.2,1); box-shadow: 0 8px 26px rgba(14,165,255,0.08); }
+
+  /* chapters */
+  .chapters{ margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .chapter {
+    display:flex; gap:12px; align-items:flex-start; padding:10px; border-radius:10px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border:1px solid rgba(255,255,255,0.02);
+  }
+  .chapter .num { min-width:34px; text-align:center; font-weight:700; color:var(--muted) }
+  .chapter .cbody { flex:1 }
+  .chapter h4{ margin:0 0 6px 0; font-size:15px; }
+  .cmeta{ display:flex; gap:12px; align-items:center; margin-bottom:6px; color:var(--muted); font-size:13px; }
+
+  /* segments as chips */
+  .seg-list{ display:flex; gap:8px; flex-wrap:wrap; }
+  .seg-chip{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
+    background: rgba(255,255,255,0.015); color:var(--text); font-size:13px; border:1px solid rgba(255,255,255,0.02);
+  }
+  .seg-chip input[type="checkbox"]{ transform:scale(1.05); cursor:pointer; }
+  .seg-ops{ margin-left:6px; display:flex; gap:6px; }
+
+  /* side card */
+  .side{
+    position: sticky; top:26px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+    border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.02);
+  }
+  .side h3{ margin:0 0 8px 0; font-size:16px; }
+  .mini-progress{ height:12px; border-radius:999px; background: rgba(255,255,255,0.03); overflow:hidden; border:1px solid rgba(255,255,255,0.02); }
+  .mini-progress > b{ display:block; height:100%; width:0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .6s cubic-bezier(.2,.9,.2,1); box-shadow: 0 8px 26px rgba(14,165,255,0.06); }
+
+  /* form controls */
+  label{ font-size:13px; color:var(--muted); display:block; margin-bottom:6px; }
+  input[type="text"], select {
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.01); color:var(--text); outline:none; font-size:14px;
+  } 
+/* 🌙 Select box এর রঙ ঠিক করা */
+select, option {
+  background-color: #1e1e1e; /* dropdown dark background */
+  color: #e0e0e0; /* সব option এর টেক্সট হালকা ধূসর */
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+/* hover করলে সুন্দর দেখাবে */
+select:hover {
+  background-color: #2a2a2a;
+}
+
+/* selected option এর জন্য */
+option:checked {
+  background-color: #007bff; /* neon blue background */
+  color: white; /* নির্বাচিত টেক্সট সাদা থাকবে */
+}
+
+  .form-row{ display:flex; gap:8px; margin-top:10px; }
+  .muted-note{ font-size:13px; color:var(--muted); margin-top:8px; }
+
+  /* footer */
+  footer{ text-align:center; margin-top:18px; color:var(--muted); font-size:13px; }
+
+  /* small responsiveness tweaks */
+  @media (max-width:420px){
+    .subject-left{ gap:8px }
+    .subject-badge{ display:none }
+    .subject-percent{ min-width:64px; font-size:14px }
+  }
+
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="title-left">
+      <h1>Study Tracker</h1>
+    </div>
+<div style="margin-top:8px">
+        <div class="muted-note"><h3>সর্বমোট অগ্রগতি</h3></div>
+        <div class="mini-progress" style="margin-top:8px"><b id="totalFill"></b></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <strong id="totalPercent">0%</strong>
+        </div>
+      </div>
+
+    <div class="controls">
+      <!-- reset will clear all storage -->
+      <button class="btn ghost" id="resetBtn" title="সব ডাটা মুছে ফেলবে (confirm)">Reset</button>
+      <button class="btn" id="addSubBtn">+ Subject</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- MAIN -->
+    <main class="main" id="mainArea">
+      <!-- subjects will render here -->
+    </main>
+
+    <!-- SIDE -->
+    <aside class="side">
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+      <!-- add subject -->
+      <div style="margin-top:6px">
+        <label>নতুন Subject</label>
+        <div class="form-row">
+          <input id="newSubject" type="text" placeholder="Subject নাম ">
+          <button class="btn" id="createSubject">Add</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <label>Subject সিলেক্ট করে Chapter / Segment যোগ করো</label>
+        <select id="selSubject" style="margin-top:8px"></select>
+
+        <div class="form-row" style="margin-top:10px">
+          <input id="newChapter" type="text" placeholder="Chapter নাম">
+          <button class="btn" id="createChapter">Add Chapter</button>
+        </div>
+
+        <div class="form-row" style="margin-top:10px">
+          <input id="chooseChapterName" type="text" placeholder="Chapter নাম (যে Chapter এ Segment Add করতে চাও।) ">
+        </div>
+
+        <div class="form-row" style="margin-top:8px">
+          <input id="newSegment" type="text" placeholder="Segment নাম (উদা: Class )">
+          <button class="btn" id="createSegment">Add Segment</button>
+        </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+      
+      </div>
+    </aside>
+  </div>
+
+  <footer><p>© Devoloped by <h3><b>Shaiduzzaman Nobin</b></h3> </p>  Study Tracker — Data saved locally in your browser</footer>
+</div>
+
+<script>
+/*
+  Bengali comments for easy editing.
+  STRUCTURE (studyData):
+  [
+    {
+      id, name,
+      chapters: [
+        { id, name, segments: [ { id, name, done } ] }
+      ]
+    }
+  ]
+  Each segment value = 1 (hidden). Progress = done_count / total_count * 100
+*/
+
+/* -----------------------
+   Helpers
+   ----------------------- */
+const uid = (n=6) => Math.random().toString(36).slice(2, 2+n);
+const LS_KEY = "study_tracker_dark_v1";
+
+/* Load & Save */
+function loadData() {
+  const raw = localStorage.getItem(LS_KEY);
+  if(!raw) {
+    // যদি প্রথমবার হয়, কিছু sample data যোগ করে ফেলি
+    const sample = [
+      { id: uid(), name: "Physics", chapters: [
+        { id: uid(), name: "Vector", segments: [
+          { id: uid(), name: "Class ", done:false },
+          { id: uid(), name: "Exam", done:false },
+          ]},
+        { id: uid(), name: "Thermodynamics", segments: [
+          { id: uid(), name: "Class", done:false }
+        ]}
+      ]},
+      { id: uid(), name: "Chemistry", chapters: [
+        { id: uid(), name: "Organic Chemistry", segments: [
+          { id: uid(), name: "Class", done:false }
+        ]}
+      ]}
+    ];
+    localStorage.setItem(LS_KEY, JSON.stringify(sample));
+    return sample;
+  }
+  try { return JSON.parse(raw); } catch(e) { return []; }
+}
+function saveData() {
+  localStorage.setItem(LS_KEY, JSON.stringify(studyData));
+}
+
+/* -----------------------
+   Progress calculators
+   ----------------------- */
+function chapterProgress(ch) {
+  const total = ch.segments.length;
+  const done = ch.segments.filter(s => s.done).length;
+  return total === 0 ? 0 : Math.round((done / total) * 100);
+}
+function subjectProgress(sub) {
+  let total = 0, done = 0;
+  sub.chapters.forEach(ch => {
+    total += ch.segments.length;
+    done += ch.segments.filter(s => s.done).length;
+  });
+  return total === 0 ? 0 : Math.round((done / total) * 100);
+}
+function totalProgressAll() {
+  let total = 0, done = 0;
+  studyData.forEach(sub => {
+    sub.chapters.forEach(ch => {
+      total += ch.segments.length;
+      done += ch.segments.filter(s => s.done).length;
+    });
+  });
+  return { total, done, percent: total === 0 ? 0 : Math.round((done / total) * 100) };
+}
+
+/* -----------------------
+   Render UI
+   ----------------------- */
+function render() {
+  const main = document.getElementById("mainArea");
+  main.innerHTML = "";
+
+  studyData.forEach(sub => {
+    // SUBJECT CARD
+    const sCard = document.createElement("div");
+    sCard.className = "subject";
+
+    // header
+    const sh = document.createElement("div"); sh.className = "subject-head";
+    const sLeft = document.createElement("div"); sLeft.className = "subject-left";
+    const badge = document.createElement("div"); badge.className = "subject-badge"; badge.textContent = sub.name.charAt(0) || "S";
+    const sTitle = document.createElement("div"); sTitle.className = "subject-title";
+    const h3 = document.createElement("h3"); h3.textContent = sub.name;
+    const p = document.createElement("p"); p.textContent = `${sub.chapters.length} টি chapter`; p.className = "muted-note";
+    sTitle.appendChild(h3); sTitle.appendChild(p);
+    sLeft.appendChild(badge); sLeft.appendChild(sTitle);
+
+    const sRight = document.createElement("div"); sRight.className = "subject-right";
+    const percent = subjectProgress(sub);
+    const perDiv = document.createElement("div"); perDiv.className = "subject-percent"; perDiv.textContent = percent + "%";
+    const actions = document.createElement("div"); actions.className = "subject-actions";
+    // delete subject button
+    const delBtn = document.createElement("button"); delBtn.className = "btn ghost"; delBtn.style.padding="8px 10px"; delBtn.textContent="Delete";
+    delBtn.onclick = ()=> {
+      if(!confirm(`"${sub.name}" Subject মুছে ফেলতে চান? (সব টা data মুছে যাবে)`)) return;
+      studyData = studyData.filter(x => x.id !== sub.id);
+      saveData();
+      render();
+    };
+    actions.appendChild(delBtn);
+
+    sRight.appendChild(perDiv);
+    sRight.appendChild(actions);
+
+    sh.appendChild(sLeft);
+    sh.appendChild(sRight);
+    sCard.appendChild(sh);
+
+    // small progress bar
+    const prog = document.createElement("div"); prog.className = "progress";
+    const fill = document.createElement("i"); fill.style.width = percent + "%";
+    prog.appendChild(fill);
+    sCard.appendChild(prog);
+
+    // chapters list
+    const chWrap = document.createElement("div"); chWrap.className = "chapters";
+    sub.chapters.forEach((ch, cIndex) => {
+      const c = document.createElement("div"); c.className = "chapter";
+      const num = document.createElement("div"); num.className = "num"; num.textContent = cIndex + 1;
+      const cbody = document.createElement("div"); cbody.className = "cbody";
+      const chHead = document.createElement("div"); chHead.style.display = "flex"; chHead.style.justifyContent = "space-between";
+      const chTitle = document.createElement("h4"); chTitle.textContent = ch.name;
+      const chOps = document.createElement("div"); chOps.className = "cmeta";
+
+      // chapter meta
+      const chProg = chapterProgress(ch);
+      const chProgText = document.createElement("div"); chProgText.textContent = `Progress: ${chProg}%`;
+      chProgText.style.color = "var(--muted)";
+      chOps.appendChild(chProgText);
+
+      // delete chapter button
+      const delChap = document.createElement("button"); delChap.className = "btn ghost"; delChap.style.padding="6px 8px"; delChap.textContent="Delete";
+      delChap.onclick = ()=> {
+        if(!confirm(`"${ch.name}" chapter মুছে ফেলতে চান?`)) return;
+        const sIndex = studyData.findIndex(x=>x.id===sub.id);
+        if(sIndex>=0){
+          studyData[sIndex].chapters = studyData[sIndex].chapters.filter(cc => cc.id !== ch.id);
+          saveData(); render();
+        }
+      };
+      chOps.appendChild(delChap);
+
+      chHead.appendChild(chTitle);
+      chHead.appendChild(chOps);
+
+      // chapter progress bar
+      const chProgBar = document.createElement("div"); chProgBar.className = "progress"; chProgBar.style.marginTop = "8px";
+      const chFill = document.createElement("i"); chFill.style.width = chProg + "%";
+      chProgBar.appendChild(chFill);
+
+      // segments chips
+      const segList = document.createElement("div"); segList.className = "seg-list";
+      ch.segments.forEach(seg => {
+        const chip = document.createElement("label"); chip.className = "seg-chip";
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = seg.done;
+        cb.onchange = ()=> {
+          seg.done = !seg.done;
+          saveData(); render();
+        };
+        const sname = document.createElement("span"); sname.textContent = seg.name;
+        const segOps = document.createElement("div"); segOps.className = "seg-ops";
+        const delSeg = document.createElement("button"); delSeg.className = "btn ghost"; delSeg.style.padding="6px 8px"; delSeg.textContent="Delete";
+        delSeg.onclick = ()=> {
+          if(!confirm(`"${seg.name}" segment মুছে ফেলতে চান?`)) return;
+          // find and remove
+          const sIdx = studyData.findIndex(x=>x.id===sub.id);
+          if(sIdx<0) return;
+          const chIdx = studyData[sIdx].chapters.findIndex(x=>x.id===ch.id);
+          if(chIdx<0) return;
+          studyData[sIdx].chapters[chIdx].segments = studyData[sIdx].chapters[chIdx].segments.filter(ss => ss.id !== seg.id);
+          saveData(); render();
+        };
+
+        segOps.appendChild(delSeg);
+        chip.appendChild(cb);
+        chip.appendChild(sname);
+        chip.appendChild(segOps);
+        segList.appendChild(chip);
+      });
+
+      cbody.appendChild(chHead);
+      cbody.appendChild(chProgBar);
+      cbody.appendChild(segList);
+
+      // quick add segment button under chapter
+      const quickAdd = document.createElement("div"); quickAdd.style.marginTop="8px";
+      const qbtn = document.createElement("button"); qbtn.className="btn ghost"; qbtn.textContent = "+ Add Segment";
+      qbtn.onclick = ()=> {
+        const segName = prompt("নতুন Segment নাম দাও (উদা: Class Notes):");
+        if(!segName) return;
+        const sIndex = studyData.findIndex(x=>x.id===sub.id);
+        studyData[sIndex].chapters.find(cc=>cc.id===ch.id).segments.push({ id: uid(), name: segName.trim(), done:false });
+        saveData(); render();
+      };
+      quickAdd.appendChild(qbtn);
+      cbody.appendChild(quickAdd);
+
+      c.appendChild(num);
+      c.appendChild(cbody);
+      chWrap.appendChild(c);
+    });
+
+    // add chapter button for this subject
+    const addChapWrap = document.createElement("div"); addChapWrap.style.marginTop = "10px";
+    const addChapBtn = document.createElement("button"); addChapBtn.className = "btn"; addChapBtn.textContent = "+ Add Chapter";
+    addChapBtn.onclick = ()=> {
+      const chName = prompt("নতুন Chapter নাম দাও:");
+      if(!chName) return;
+      const index = studyData.findIndex(x=>x.id===sub.id);
+      studyData[index].chapters.push({ id: uid(), name: chName.trim(), segments: [] });
+      saveData(); render();
+    };
+    addChapWrap.appendChild(addChapBtn);
+
+    sCard.appendChild(chWrap);
+    sCard.appendChild(addChapWrap);
+
+    main.appendChild(sCard);
+  });
+
+  // update sidebar summary & selects
+  updateSidebar();
+}
+
+/* -----------------------
+   CRUD: Add via sidebar controls
+   ----------------------- */
+function addSubjectFromInput() {
+  const val = document.getElementById("newSubject").value.trim();
+  if(!val){ alert("Subject নাম দিন"); return; }
+  studyData.push({ id: uid(), name: val, chapters: [] });
+  document.getElementById("newSubject").value = "";
+  saveData(); render();
+}
+function addChapterFromInput() {
+  const subId = document.getElementById("selSubject").value;
+  const chName = document.getElementById("newChapter").value.trim();
+  if(!subId){ alert("প্রথমে Subject সিলেক্ট করুন"); return; }
+  if(!chName){ alert("Chapter নাম দিন"); return; }
+  const s = studyData.find(x=>x.id===subId);
+  s.chapters.push({ id: uid(), name: chName, segments: [] });
+  document.getElementById("newChapter").value = "";
+  saveData(); render();
+}
+function addSegmentFromInput() {
+  const subId = document.getElementById("selSubject").value;
+  let chapName = document.getElementById("chooseChapterName").value.trim();
+  const segName = document.getElementById("newSegment").value.trim();
+  if(!subId){ alert("প্রথমে Subject সিলেক্ট করুন"); return; }
+  if(!segName){ alert("Segment নাম দিন"); return; }
+  const subj = studyData.find(x=>x.id===subId);
+  // যদি chapter name দেওয়া থাকে এবং মেলে তখন সেখানে যোগ করো, না হলে নতুন chapter বানাবে (name খালি হলে নতুন chapter prompt করো)
+  if(chapName){
+    let ch = subj.chapters.find(c => c.name.toLowerCase() === chapName.toLowerCase());
+    if(!ch){
+      // chapter মিলা নি → নতুন chapter বানাও
+      ch = { id: uid(), name: chapName, segments: [] };
+      subj.chapters.push(ch);
+    }
+    ch.segments.push({ id: uid(), name: segName, done:false });
+  } else {
+    // chapName খালি → নতুন chapter নাম চাও
+    const newCh = prompt("Chapter নাম দিন (নতুন chapter বানবে):");
+    if(!newCh) return;
+    const ch = { id: uid(), name: newCh.trim(), segments: [ { id: uid(), name: segName, done:false } ] };
+    subj.chapters.push(ch);
+  }
+
+  document.getElementById("newSegment").value = "";
+  document.getElementById("chooseChapterName").value = "";
+  saveData(); render();
+}
+
+/* -----------------------
+   Sidebar update & totals
+   ----------------------- */
+function updateSidebar(){
+  // populate subject select
+  const sel = document.getElementById("selSubject");
+  sel.innerHTML = "";
+  studyData.forEach(s => {
+    const opt = document.createElement("option"); opt.value = s.id; opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+
+  // total progress
+  const tot = totalProgressAll();
+  document.getElementById("totalFill").style.width = tot.percent + "%";
+  document.getElementById("totalPercent").textContent = tot.percent + "%";
+  document.getElementById("totalStat").textContent = `${tot.done} / ${tot.total} segments`;
+}
+
+/* -----------------------
+   Event bindings
+   ----------------------- */
+document.getElementById("createSubject").addEventListener("click", addSubjectFromInput);
+document.getElementById("createChapter").addEventListener("click", addChapterFromInput);
+document.getElementById("createSegment").addEventListener("click", addSegmentFromInput);
+document.getElementById("addSubBtn").addEventListener("click", ()=> {
+  const name = prompt("Subject নাম দিন:");
+  if(name) {
+    studyData.push({ id: uid(), name: name.trim(), chapters: [] });
+    saveData(); render();
+  }
+});
+document.getElementById("resetBtn").addEventListener("click", ()=> {
+  if(confirm("সব ডাটা মুছে ফেলতে চান? (confirm)")) {
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  }
+});
+
+/* -----------------------
+   Init
+   ----------------------- */
+let studyData = loadData();
+render();
+
+/* listen to storage changes from other tabs */
+window.addEventListener("storage", (e) => {
+  if(e.key === LS_KEY) {
+    studyData = loadData();
+    render();
+  }
+});
+</script>
+</body>
+</html>
